@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --wg-surface: #ffffff;
+  --wg-border: #d7dde5;
+  --wg-text: #172033;
+  --wg-muted: #5b677a;
+  --wg-radius: 6px;
+}
+
+.wg-platform-root {
+  color: var(--wg-text);
+  background: var(--wg-surface);
+}

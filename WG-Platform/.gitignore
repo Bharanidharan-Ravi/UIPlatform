@@ -1,0 +1,11 @@
+node_modules/
+.vite/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/*
+!dist/.gitkeep
+*.local
+.DS_Store

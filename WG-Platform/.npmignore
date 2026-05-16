@@ -1,0 +1,10 @@
+node_modules/
+src/
+.vite/
+coverage/
+tailwind.config.js
+postcss.config.js
+vite.config.js
+jsconfig.json
+*.log
+*.local

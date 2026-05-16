@@ -1,0 +1,56 @@
+{
+  "name": "wg-platform",
+  "version": "1.0.0",
+  "description": "Reusable internal frontend platform engine for enterprise React applications.",
+  "type": "module",
+  "main": "./dist/wg-platform.cjs",
+  "module": "./dist/wg-platform.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/wg-platform.es.js",
+      "require": "./dist/wg-platform.cjs"
+    },
+    "./styles.css": "./dist/wg-platform.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "preview": "vite preview",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "react",
+    "vite",
+    "platform",
+    "enterprise",
+    "frontend"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "peerDependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mui/material": "^5.15.0 || ^6.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0",
+    "react-router-dom": "^6.22.0 || ^7.0.0",
+    "zustand": "^4.5.0 || ^5.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "vite": "^8.0.13"
+  }
+}
