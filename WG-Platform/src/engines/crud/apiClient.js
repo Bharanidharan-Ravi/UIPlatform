@@ -1,3 +1,9 @@
+import {
+  trackRequestEnd,
+  trackRequestError,
+  trackRequestStart,
+  trackRequestSuccess
+} from '../api/requestTracker.js';
 import { buildQuery } from '../query/buildQuery.js';
 
 const jsonContentTypes = ['application/json', 'application/problem+json'];
@@ -119,7 +125,15 @@ export function createApiClient({
         options: requestOptions
       };
 
+    let trackedRequest;
+
     try {
+      trackedRequest = trackRequestStart({
+        ...config,
+        method,
+        url: nextRequest.url
+      });
+
       const response = await fetcher(nextRequest.url, nextRequest.options);
       const data = await parseResponse(response, config.responseType || responseType);
       const result = {
@@ -142,10 +156,15 @@ export function createApiClient({
         throw error;
       }
 
+      trackRequestSuccess(trackedRequest, result);
+
       return returnResponse ? result : data;
     } catch (error) {
+      trackRequestError(trackedRequest, error);
       await onError?.(error, config);
       throw error;
+    } finally {
+      trackRequestEnd(trackedRequest);
     }
   }
 

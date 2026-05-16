@@ -1425,3 +1425,251 @@ platformLog(FORM, 'Field changed', {
 ```
 
 Use debug logs for reusable platform internals only. Business apps should avoid adding random `console.log` calls inside shared platform code.
+
+## Global API State System
+
+WG-Platform includes a centralized API state engine for managing API UX across an app.
+It tracks global loading, global errors, active requests, and the last normalized API error.
+
+The system is connected to the existing platform API client, so the normal API methods still work:
+
+```js
+api.get('/Users');
+api.post('/Login', values);
+api.put('/Users/1', payload);
+api.delete('/Users/1');
+```
+
+By default, requests use `global` mode.
+
+### Enable global API UI
+
+Add these props to `PlatformProvider`:
+
+```jsx
+<PlatformProvider
+  apiBaseUrl="https://nestapi.workglow.in/api"
+  enableGlobalLoader
+  enableGlobalErrors
+>
+  <App />
+</PlatformProvider>
+```
+
+`enableGlobalLoader` renders `GlobalApiLoader` when global requests are running.
+`enableGlobalErrors` renders `GlobalApiError` when global requests fail.
+
+These UI components are optional, so existing apps do not suddenly change their UX unless they opt in.
+
+### Request modes
+
+WG-Platform supports three request modes:
+
+| Mode | Use when | Loader | Error UI | Tracking |
+| --- | --- | --- | --- | --- |
+| `global` | Normal page actions like save, login, delete, submit | Yes | Yes | Yes |
+| `local` | Component controls its own loading and error state | No | No | Yes |
+| `silent` | Background calls like token refresh, polling, telemetry | No | No | No UI tracking |
+
+### Global mode
+
+Use global mode for normal user-facing actions.
+This is the default mode, so you usually do not need to pass anything.
+
+```js
+const data = await api.post('/Login', values);
+```
+
+This is the same as:
+
+```js
+const data = await api.post('/Login', values, {
+  mode: 'global'
+});
+```
+
+Global mode:
+
+- increases global loading count
+- shows global loader if enabled
+- normalizes errors
+- shows global error UI if enabled
+- tracks active request state
+
+### Local mode
+
+Use local mode when a component wants to handle its own loader and error message.
+
+```jsx
+function UploadButton() {
+  const api = usePlatformApi();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function upload(payload) {
+    try {
+      setLoading(true);
+      setError(null);
+
+      await api.post('/Upload', payload, {
+        mode: 'local'
+      });
+    } catch (uploadError) {
+      setError(uploadError);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return <button disabled={loading}>Upload</button>;
+}
+```
+
+Local mode:
+
+- does not show global loader
+- does not show global error UI
+- still tracks the active request
+- still updates normalized `lastError`
+
+### Silent mode
+
+Use silent mode for background requests that should not affect the user interface.
+
+```js
+await api.get('/RefreshToken', {
+  mode: 'silent'
+});
+```
+
+Silent mode is useful for:
+
+- refresh token calls
+- background sync
+- polling
+- health checks
+- non-blocking telemetry
+
+Silent mode:
+
+- does not show global loader
+- does not show global error UI
+- does not add UI request tracking
+
+### API state hooks
+
+Use these hooks when building app-level UX or custom shells:
+
+```js
+import {
+  useApiState,
+  useGlobalLoader,
+  useGlobalError
+} from 'wg-platform';
+```
+
+Read global loader state:
+
+```jsx
+function HeaderLoader() {
+  const { loading, loadingCount } = useGlobalLoader();
+
+  return loading ? <span>{loadingCount} request(s) running</span> : null;
+}
+```
+
+Read and dismiss global errors:
+
+```jsx
+function ErrorPanel() {
+  const { errors, dismissError, clearErrors } = useGlobalError();
+
+  return (
+    <div>
+      {errors.map((error) => (
+        <button key={error.id} onClick={() => dismissError(error.id)}>
+          {error.message}
+        </button>
+      ))}
+
+      <button onClick={clearErrors}>Clear all</button>
+    </div>
+  );
+}
+```
+
+Read the full API state:
+
+```js
+const apiState = useApiState();
+
+console.log(apiState.loadingCount);
+console.log(apiState.globalLoading);
+console.log(apiState.globalErrors);
+console.log(apiState.activeRequests);
+console.log(apiState.lastError);
+```
+
+### Reusable global UI components
+
+You can use the built-in components directly if you want to place them yourself:
+
+```jsx
+import { GlobalApiLoader, GlobalApiError } from 'wg-platform';
+
+function AppShell() {
+  return (
+    <>
+      <GlobalApiLoader label="Working..." />
+      <GlobalApiError />
+      <App />
+    </>
+  );
+}
+```
+
+### Normalized API state shape
+
+The API store tracks:
+
+- `loadingCount`
+- `globalLoading`
+- `globalErrors`
+- `activeRequests`
+- `lastError`
+
+Errors are normalized into a consistent shape:
+
+```js
+{
+  id: 'error-id',
+  message: 'Request failed.',
+  status: 500,
+  data: {},
+  method: 'POST',
+  url: '/Login',
+  mode: 'global',
+  timestamp: '2026-05-16T00:00:00.000Z'
+}
+```
+
+### Exported API state utilities
+
+The following exports are available from `wg-platform`:
+
+- `GLOBAL`
+- `LOCAL`
+- `SILENT`
+- `API_MODES`
+- `normalizeApiMode`
+- `apiStore`
+- `useApiState`
+- `useGlobalLoader`
+- `useGlobalError`
+- `GlobalApiLoader`
+- `GlobalApiError`
+- `normalizeApiError`
+- `trackRequestStart`
+- `trackRequestSuccess`
+- `trackRequestError`
+- `trackRequestEnd`
