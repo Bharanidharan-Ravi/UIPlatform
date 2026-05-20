@@ -12,13 +12,37 @@ export function MuiTimeInput({
   readOnly
 }) {
   const props = field.props || {};
+  const {
+    InputProps: legacyInputProps,
+    InputLabelProps: legacyInputLabelProps,
+    inputProps: legacyHtmlInputProps,
+    slotProps: providedSlotProps,
+    ...restProps
+  } = props;
+  const slotProps = {
+    ...providedSlotProps,
+    input: {
+      ...(legacyInputProps || {}),
+      ...(providedSlotProps?.input || {}),
+      readOnly
+    },
+    inputLabel: {
+      ...(legacyInputLabelProps || {}),
+      ...(providedSlotProps?.inputLabel || {}),
+      shrink: true
+    },
+    htmlInput: {
+      ...(legacyHtmlInputProps || {}),
+      ...(providedSlotProps?.htmlInput || {})
+    }
+  };
 
   return (
     <TextField
-      {...props}
-      fullWidth={props.fullWidth ?? true}
-      margin={props.margin ?? 'normal'}
-      size={props.size ?? 'small'}
+      {...restProps}
+      fullWidth={restProps.fullWidth ?? true}
+      margin={restProps.margin ?? 'normal'}
+      size={restProps.size ?? 'small'}
       type="time"
       label={field.label}
       name={name}
@@ -28,14 +52,7 @@ export function MuiTimeInput({
       error={error}
       helperText={helperText || field.helperText}
       disabled={disabled}
-      InputLabelProps={{
-        ...(props.InputLabelProps || {}),
-        shrink: true
-      }}
-      InputProps={{
-        ...(props.InputProps || {}),
-        readOnly
-      }}
+      slotProps={slotProps}
     />
   );
 }

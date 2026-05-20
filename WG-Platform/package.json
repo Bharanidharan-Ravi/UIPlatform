@@ -1,6 +1,6 @@
 {
   "name": "wg-platform",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "Reusable internal frontend platform engine for enterprise React applications.",
   "type": "module",
   "main": "./dist/wg-platform.cjs",
@@ -52,5 +52,9 @@
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
     "vite": "^8.0.13"
+  },
+  "dependencies": {
+    "formik": "^2.4.9",
+    "yup": "^1.7.1"
   }
 }

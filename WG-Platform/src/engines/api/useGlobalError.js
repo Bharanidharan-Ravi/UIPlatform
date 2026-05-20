@@ -1,11 +1,16 @@
 import { useApiState } from './useApiState.js';
 
 export function useGlobalError() {
-  return useApiState((state) => ({
-    errors: state.globalErrors,
-    hasErrors: state.globalErrors.length > 0,
-    lastError: state.lastError,
-    dismissError: state.dismissError,
-    clearErrors: state.clearErrors
-  }));
+  const errors = useApiState((state) => state.globalErrors);
+  const lastError = useApiState((state) => state.lastError);
+  const dismissError = useApiState((state) => state.dismissError);
+  const clearErrors = useApiState((state) => state.clearErrors);
+
+  return {
+    errors,
+    hasErrors: errors.length > 0,
+    lastError,
+    dismissError,
+    clearErrors
+  };
 }

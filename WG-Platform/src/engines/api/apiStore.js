@@ -5,8 +5,10 @@ const initialState = {
   loadingCount: 0,
   globalLoading: false,
   globalErrors: [],
+  globalSuccesses: [],
   activeRequests: [],
-  lastError: null
+  lastError: null,
+  lastSuccess: null
 };
 
 export const apiStore = createStore((set) => ({
@@ -81,13 +83,29 @@ export const apiStore = createStore((set) => ({
       lastError: error
     }));
   },
+  addGlobalSuccess: (success) => {
+    set((state) => ({
+      globalSuccesses: [...state.globalSuccesses, success],
+      lastSuccess: success
+    }));
+  },
   dismissError: (errorId) => {
     set((state) => ({
       globalErrors: state.globalErrors.filter((error) => error.id !== errorId)
     }));
   },
+  dismissSuccess: (successId) => {
+    set((state) => ({
+      globalSuccesses: state.globalSuccesses.filter(
+        (success) => success.id !== successId
+      )
+    }));
+  },
   clearErrors: () => {
     set({ globalErrors: [], lastError: null });
+  },
+  clearSuccesses: () => {
+    set({ globalSuccesses: [], lastSuccess: null });
   },
   reset: () => {
     set(initialState);

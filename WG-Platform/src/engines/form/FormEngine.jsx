@@ -2,6 +2,8 @@ import { Fragment } from 'react';
 import { FORM, platformLog } from '../../debug/index.js';
 import { getInputComponent, inputRegistry } from '../../registry/inputRegistry.js';
 import { useFormEngine } from './useFormEngine.js';
+import FormikConfigEngine from './FormikConfigEngine.jsx';
+import { mapFormValues } from './valueMapper.js';
 
 export function FormEngine({
   schema = [],
@@ -22,22 +24,51 @@ export function FormEngine({
   className = '',
   formProps = {}
 }) {
-  const engine = useFormEngine({
-    schema,
-    value,
-    defaultValue,
-    onChange,
-    onSubmit,
-    validation,
-    resolver,
-    valueMapper
-  });
+  const usingFormik =
+    adapter === 'formik' ||
+    (formProps && formProps.formType === 'formik') ||
+    (typeof schema === 'object' && schema?.formType === 'formik');
+
+  const engine = usingFormik
+    ? null
+    : useFormEngine({
+        schema,
+        value,
+        defaultValue,
+        onChange,
+        onSubmit,
+        validation,
+        resolver,
+        valueMapper
+      });
 
   platformLog(FORM, 'Form render', {
     adapter,
     fieldCount: schema.length,
     controlled: value !== undefined
   });
+
+  if (usingFormik) {
+    // Prefer a `config` object when provided; otherwise build one from the schema/defaultValue
+    const configObj = formProps?.config || (typeof schema === 'object' && schema?.fields ? schema : null);
+
+    const builtConfig =
+      configObj ||
+      ({ ui: adapter, formType: 'formik', initialValues: defaultValue, fields: schema });
+
+    return (
+      <FormikConfigEngine
+        config={builtConfig}
+        onSubmit={(values, formikBag) => {
+          // Map values using the existing valueMapper if provided
+          const mapped = typeof valueMapper === 'function' ? valueMapper(values, schema) : values;
+          onSubmit?.(mapped, formikBag);
+        }}
+        submitLabel={formProps.submitLabel || 'Submit'}
+        showDebug={formProps.showDebug || false}
+      />
+    );
+  }
 
   return (
     <form

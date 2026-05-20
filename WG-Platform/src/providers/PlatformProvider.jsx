@@ -1,6 +1,10 @@
 import { useMemo } from 'react';
 import { CssBaseline, ThemeProvider } from '@mui/material';
-import { GlobalApiError, GlobalApiLoader } from '../engines/api/index.js';
+import {
+  GlobalApiError,
+  GlobalApiLoader,
+  GlobalApiSuccess
+} from '../engines/api/index.js';
 import { createPlatformTheme } from '../themes/createPlatformTheme.js';
 import { ApiProvider } from './ApiProvider.jsx';
 import { QueryProvider } from './QueryProvider.jsx';
@@ -14,8 +18,10 @@ export function PlatformProvider({
   getApiHeaders,
   enableGlobalLoader = false,
   enableGlobalErrors = false,
+  enableGlobalSuccess = false,
   globalLoaderProps,
   globalErrorProps,
+  globalSuccessProps,
   queryClient,
   queryClientOptions,
   theme,
@@ -41,6 +47,9 @@ export function PlatformProvider({
           <div className="wg-platform-root">{children}</div>
           {enableGlobalLoader ? <GlobalApiLoader {...globalLoaderProps} /> : null}
           {enableGlobalErrors ? <GlobalApiError {...globalErrorProps} /> : null}
+          {enableGlobalSuccess ? (
+            <GlobalApiSuccess {...globalSuccessProps} />
+          ) : null}
         </ThemeProvider>
       </ApiProvider>
     </QueryProvider>

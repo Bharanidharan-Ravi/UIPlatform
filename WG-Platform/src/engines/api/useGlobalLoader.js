@@ -1,8 +1,11 @@
 import { useApiState } from './useApiState.js';
 
 export function useGlobalLoader() {
-  return useApiState((state) => ({
-    loading: state.globalLoading,
-    loadingCount: state.loadingCount
-  }));
+  const loading = useApiState((state) => state.globalLoading);
+  const loadingCount = useApiState((state) => state.loadingCount);
+
+  return {
+    loading,
+    loadingCount
+  };
 }

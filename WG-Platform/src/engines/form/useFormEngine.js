@@ -66,6 +66,17 @@ export function useFormEngine({
         nextValue
       );
       updateValues(nextValues);
+
+      // Clear error for this field when value changes
+      setErrors((current) => {
+        if (current[name]) {
+          const nextErrors = { ...current };
+          delete nextErrors[name];
+          return nextErrors;
+        }
+        return current;
+      });
+
       return nextValues;
     },
     [updateValues, values]

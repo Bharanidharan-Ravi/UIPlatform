@@ -1,4 +1,4 @@
-import { getValueByPath } from '../form/valueMapper.js';
+import { getValueByPath } from '../../utils/valueMapper.js';
 import { buildValidationSchema } from './validationBuilder.js';
 
 const isEmpty = (value) =>

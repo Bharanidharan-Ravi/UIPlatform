@@ -8,3 +8,4 @@ export * from './query/index.js';
 export * from './sync/index.js';
 export * from './validation/index.js';
 export * from './workflow/index.js';
+export * from '../routing/index.js';

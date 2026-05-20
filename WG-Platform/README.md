@@ -1451,6 +1451,7 @@ Add these props to `PlatformProvider`:
   apiBaseUrl="https://nestapi.workglow.in/api"
   enableGlobalLoader
   enableGlobalErrors
+  enableGlobalSuccess
 >
   <App />
 </PlatformProvider>
@@ -1458,8 +1459,32 @@ Add these props to `PlatformProvider`:
 
 `enableGlobalLoader` renders `GlobalApiLoader` when global requests are running.
 `enableGlobalErrors` renders `GlobalApiError` when global requests fail.
+`enableGlobalSuccess` renders `GlobalApiSuccess` when a request provides `successMessage`.
 
 These UI components are optional, so existing apps do not suddenly change their UX unless they opt in.
+
+You can customize built-in global UI from `PlatformProvider`:
+
+```jsx
+<PlatformProvider
+  apiBaseUrl="https://nestapi.workglow.in/api"
+  enableGlobalLoader
+  enableGlobalErrors
+  enableGlobalSuccess
+  globalLoaderProps={{
+    label: 'Please wait, saving data...'
+  }}
+  globalErrorProps={{
+    autoHideDuration: 8000,
+    resolveMessage: (error) => error.data?.message || 'Something went wrong.'
+  }}
+  globalSuccessProps={{
+    autoHideDuration: 3000
+  }}
+>
+  <App />
+</PlatformProvider>
+```
 
 ### Request modes
 
@@ -1494,7 +1519,24 @@ Global mode:
 - shows global loader if enabled
 - normalizes errors
 - shows global error UI if enabled
+- can show global success UI if `successMessage` is provided
 - tracks active request state
+
+To show a global success toast for a request:
+
+```js
+await api.post('/Users', payload, {
+  successMessage: 'User created successfully.'
+});
+```
+
+You can also compute it dynamically:
+
+```js
+await api.post('/Users', payload, {
+  successMessage: (result) => result.data?.message || 'Saved successfully.'
+});
+```
 
 ### Local mode
 
@@ -1564,7 +1606,8 @@ Use these hooks when building app-level UX or custom shells:
 import {
   useApiState,
   useGlobalLoader,
-  useGlobalError
+  useGlobalError,
+  useGlobalSuccess
 } from 'wg-platform';
 ```
 
@@ -1598,6 +1641,26 @@ function ErrorPanel() {
 }
 ```
 
+Read and dismiss global successes:
+
+```jsx
+function SuccessPanel() {
+  const { successes, dismissSuccess, clearSuccesses } = useGlobalSuccess();
+
+  return (
+    <div>
+      {successes.map((success) => (
+        <button key={success.id} onClick={() => dismissSuccess(success.id)}>
+          {success.message}
+        </button>
+      ))}
+
+      <button onClick={clearSuccesses}>Clear all</button>
+    </div>
+  );
+}
+```
+
 Read the full API state:
 
 ```js
@@ -1615,13 +1678,14 @@ console.log(apiState.lastError);
 You can use the built-in components directly if you want to place them yourself:
 
 ```jsx
-import { GlobalApiLoader, GlobalApiError } from 'wg-platform';
+import { GlobalApiLoader, GlobalApiError, GlobalApiSuccess } from 'wg-platform';
 
 function AppShell() {
   return (
     <>
       <GlobalApiLoader label="Working..." />
       <GlobalApiError />
+      <GlobalApiSuccess />
       <App />
     </>
   );
@@ -1635,8 +1699,10 @@ The API store tracks:
 - `loadingCount`
 - `globalLoading`
 - `globalErrors`
+- `globalSuccesses`
 - `activeRequests`
 - `lastError`
+- `lastSuccess`
 
 Errors are normalized into a consistent shape:
 
@@ -1666,10 +1732,304 @@ The following exports are available from `wg-platform`:
 - `useApiState`
 - `useGlobalLoader`
 - `useGlobalError`
+- `useGlobalSuccess`
 - `GlobalApiLoader`
 - `GlobalApiError`
+- `GlobalApiSuccess`
 - `normalizeApiError`
 - `trackRequestStart`
 - `trackRequestSuccess`
 - `trackRequestError`
 - `trackRequestEnd`
+
+## Routing Foundation (Phase 1 & 2)
+
+This section documents the new, minimal routing foundation added in Phase 1 & 2. It provides a lightweight, store-only route registry, a feature registry for registering feature metadata, route constants, simple path helpers, and a minimal `RoutingProvider` with hooks. This is intentionally storage-only: no rendering, navigation, or advanced routing behavior is implemented in this phase.
+
+### Feature registry overview
+
+- Purpose: centrally register app features (modules) and their metadata.
+- API:
+  - `registerFeature(feature)` — register a feature object { name, routes, permissions, menu, layouts, metadata }.
+  - `unregisterFeature(name)` — remove a feature by name.
+  - `getRegisteredFeatures()` — returns array of registered features.
+  - `getFeature(name)` — returns a single feature.
+  - `clearFeatures()` — clears the registry.
+
+Example:
+
+```js
+import { registerFeature, getRegisteredFeatures } from 'wg-platform';
+
+registerFeature({
+  name: 'employees',
+  routes: [{ key: 'employees.list', path: '/employees' }],
+  permissions: ['employees.view'],
+  menu: { label: 'Employees' }
+});
+
+console.log(getRegisteredFeatures());
+```
+
+### Route registry overview
+
+- Purpose: store route metadata for the app.
+- API:
+  - `addRoute(route)` — add a route object `{ key, path, metadata, permissions, layout, sidebar }`.
+  - `getRoute(key)` — read a route by key.
+  - `getAllRoutes()` — list all registered routes.
+  - `removeRoute(key)` — remove a route.
+  - `clearRoutes()` — clear all routes.
+
+Example:
+
+```js
+import { addRoute, getRoute } from 'wg-platform';
+
+addRoute({ key: 'employees.list', path: '/employees', metadata: { title: 'Employees' } });
+
+console.log(getRoute('employees.list'));
+```
+
+### Route constants overview
+
+Two small helpers are provided to avoid hardcoded strings:
+
+- `ROUTE_KEYS` — canonical route key constants.
+- `PATHS` — canonical path templates.
+
+Example:
+
+```js
+import { ROUTE_KEYS, PATHS } from 'wg-platform';
+
+console.log(ROUTE_KEYS.LIST);
+console.log(PATHS.LIST);
+```
+
+### Path helpers
+
+Utility helpers include:
+
+- `buildPath(template, params)` — build a path by replacing `:param` placeholders.
+- `normalizePath(path)` — ensures leading slash.
+- `matchRouteKey(key)` — checks whether a route key has been registered.
+
+Example:
+
+```js
+import { buildPath } from 'wg-platform';
+
+buildPath('/employees/:id', { id: 123 }); // -> '/employees/123'
+```
+
+### RoutingProvider and hooks
+
+A minimal `RoutingProvider` and two hooks are provided:
+
+- `RoutingProvider` — React context provider exposing registry APIs (store-only).
+- `useFeatureRegistry()` — hook to access feature registry functions.
+- `useRouteRegistry()` — hook to access route registry functions.
+
+Example:
+
+```jsx
+import { RoutingProvider, useFeatureRegistry, useRouteRegistry } from 'wg-platform';
+
+function App() {
+  return (
+    <RoutingProvider>
+      <MyApp />
+    </RoutingProvider>
+  );
+}
+
+function MyApp() {
+  const { registerFeature } = useFeatureRegistry();
+  const { addRoute } = useRouteRegistry();
+
+  // register on mount...
+}
+```
+
+Notes:
+
+- Phase 1 & 2 implement only the foundational pieces — storage, contracts, and minimal helpers.
+- Advanced behaviors (navigation, prefetching, menus, feature flags, workflow routing) will be added in later phases.
+
+## Routing Runtime (Phase 3)
+
+Phase 3 adds the first lightweight routing runtime on top of the existing route registry. It renders registered routes, applies route policies, supports route layouts, builds breadcrumbs, and provides smart navigation helpers.
+
+The app still owns the outer router:
+
+```jsx
+import { BrowserRouter } from 'react-router-dom';
+import { PlatformRouter, RoutingProvider } from 'wg-platform';
+
+const access = {
+  isAuthenticated: true,
+  roles: ['admin'],
+  permissions: ['employees.view']
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <RoutingProvider>
+        <PlatformRouter access={access} fallbackPath="/login" />
+      </RoutingProvider>
+    </BrowserRouter>
+  );
+}
+```
+
+### Route config example
+
+Routes can be registered with runtime metadata:
+
+```js
+import { addRoute } from 'wg-platform';
+import EmployeeList from './EmployeeList.jsx';
+import EmployeeDetails from './EmployeeDetails.jsx';
+
+addRoute({
+  key: 'employees',
+  path: '/employees',
+  component: EmployeeList,
+  protected: true,
+  permissions: ['employees.view'],
+  layout: 'app',
+  sidebar: {
+    label: 'Employees',
+    icon: 'users',
+    order: 10
+  },
+  breadcrumb: 'Employees',
+  metadata: {
+    title: 'Employees'
+  },
+  children: [
+    {
+      key: 'employees.details',
+      path: ':id',
+      component: EmployeeDetails,
+      breadcrumb: ({ params }) => `Employee ${params.id}`
+    }
+  ]
+});
+```
+
+### Protected routes
+
+`ProtectedRoute` and `PlatformRouter` use a generic access object. Roles pass when any required role matches. Permissions pass only when all required permissions are present.
+
+```jsx
+import { ProtectedRoute } from 'wg-platform';
+
+<ProtectedRoute
+  route={{
+    key: 'admin',
+    path: '/admin',
+    protected: true,
+    roles: ['admin']
+  }}
+  access={{
+    isAuthenticated: true,
+    roles: ['admin'],
+    permissions: []
+  }}
+  fallbackPath="/login"
+>
+  <AdminPage />
+</ProtectedRoute>
+```
+
+### Smart navigation
+
+Use the hook inside router context:
+
+```jsx
+import { useSmartNavigation } from 'wg-platform';
+
+function EmployeeButton() {
+  const navigation = useSmartNavigation();
+
+  return (
+    <button
+      onClick={() =>
+        navigation.goToRouteKey('employees.details', { id: 123 })
+      }
+    >
+      Open employee
+    </button>
+  );
+}
+```
+
+Standalone helpers are also exported:
+
+```js
+import { buildNavigationPath } from 'wg-platform';
+
+buildNavigationPath('employees.details', { id: 123 });
+```
+
+### Breadcrumbs
+
+Breadcrumbs are generated from registered route metadata and nested routes:
+
+```jsx
+import { useBreadcrumbs } from 'wg-platform';
+
+function Breadcrumbs() {
+  const breadcrumbs = useBreadcrumbs();
+
+  return (
+    <nav>
+      {breadcrumbs.map((item) => (
+        <a key={item.key} href={item.path}>
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  );
+}
+```
+
+Labels resolve from `breadcrumb`, `metadata.title`, `metadata.label`, `sidebar.label`, then `key`.
+
+### Layouts
+
+Pass layout components to `PlatformRouter`. A route can use a layout key, a layout component, or `layout: false` to skip layout wrapping.
+
+```jsx
+import { Outlet } from 'react-router-dom';
+import { PlatformRouter } from 'wg-platform';
+
+function AppLayout({ children }) {
+  return (
+    <div>
+      <header>Header</header>
+      <main>{children}</main>
+    </div>
+  );
+}
+
+function ParentLayout({ children }) {
+  return (
+    <section>
+      {children}
+      <Outlet />
+    </section>
+  );
+}
+
+<PlatformRouter
+  defaultLayout={AppLayout}
+  layouts={{
+    app: AppLayout,
+    parent: ParentLayout
+  }}
+/>;
+```

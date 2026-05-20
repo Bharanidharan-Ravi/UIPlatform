@@ -5,6 +5,8 @@ export function GlobalApiError({
   autoHideDuration = 6000,
   anchorOrigin = { vertical: 'top', horizontal: 'right' },
   severity = 'error',
+  resolveMessage,
+  fallbackMessage = 'Request failed.',
   ...props
 }) {
   const { errors, dismissError } = useGlobalError();
@@ -18,6 +20,10 @@ export function GlobalApiError({
   const handleClose = () => {
     dismissError(currentError.id);
   };
+  const message =
+    typeof resolveMessage === 'function'
+      ? resolveMessage(currentError)
+      : currentError.message || fallbackMessage;
 
   return (
     <Snackbar
@@ -28,7 +34,7 @@ export function GlobalApiError({
       {...props}
     >
       <Alert onClose={handleClose} severity={severity} variant="filled">
-        {currentError.message}
+        {message}
         {moreCount > 0 ? ` (${moreCount} more)` : ''}
       </Alert>
     </Snackbar>

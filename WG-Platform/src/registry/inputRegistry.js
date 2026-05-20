@@ -14,6 +14,12 @@ import {
   HtmlTextInput,
   HtmlTimeInput
 } from '../adapters/html/index.js';
+import {
+  FormikDateInput,
+  FormikSelectInput,
+  FormikTextInput,
+  FormikTimeInput
+} from '../adapters/formik/index.js';
 
 const normalize = (value) => String(value || '').trim().toLowerCase();
 
@@ -97,6 +103,16 @@ export const inputRegistry = createInputRegistry({
     select: HtmlSelectInput,
     date: HtmlDateInput,
     time: HtmlTimeInput
+  },
+  formik: {
+    text: FormikTextInput,
+    string: FormikTextInput,
+    email: FormikTextInput,
+    password: FormikTextInput,
+    number: FormikTextInput,
+    select: FormikSelectInput,
+    date: FormikDateInput,
+    time: FormikTimeInput
   },
   editor: {},
   custom: {}

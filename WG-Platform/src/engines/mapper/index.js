@@ -1,4 +1,4 @@
-import { getValueByPath, setValueByPath } from '../form/valueMapper.js';
+import { getValueByPath, setValueByPath } from '../../utils/valueMapper.js';
 
 export function mapRecord(source = {}, mapping = {}) {
   return Object.entries(mapping).reduce((target, [targetPath, sourcePath]) => {

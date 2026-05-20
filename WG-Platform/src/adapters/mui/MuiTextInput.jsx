@@ -22,15 +22,33 @@ export function MuiTextInput({
   readOnly
 }) {
   const props = field.props || {};
+  const {
+    InputProps: legacyInputProps,
+    inputProps: legacyHtmlInputProps,
+    slotProps: providedSlotProps,
+    ...restProps
+  } = props;
   const inputType =
     field.inputType || (nativeTextTypes.has(field.type) ? field.type : 'text');
+  const slotProps = {
+    ...providedSlotProps,
+    input: {
+      ...(legacyInputProps || {}),
+      ...(providedSlotProps?.input || {}),
+      readOnly
+    },
+    htmlInput: {
+      ...(legacyHtmlInputProps || {}),
+      ...(providedSlotProps?.htmlInput || {})
+    }
+  };
 
   return (
     <TextField
-      {...props}
-      fullWidth={props.fullWidth ?? true}
-      margin={props.margin ?? 'normal'}
-      size={props.size ?? 'small'}
+      {...restProps}
+      fullWidth={restProps.fullWidth ?? true}
+      margin={restProps.margin ?? 'normal'}
+      size={restProps.size ?? 'small'}
       type={inputType}
       label={field.label}
       name={name}
@@ -41,10 +59,7 @@ export function MuiTextInput({
       error={error}
       helperText={helperText || field.helperText}
       disabled={disabled}
-      InputProps={{
-        ...(props.InputProps || {}),
-        readOnly
-      }}
+      slotProps={slotProps}
     />
   );
 }
