@@ -1,29 +1,56 @@
-# WG-Platform
+# WG Platform
 
-WG-Platform is a reusable frontend platform package for internal enterprise React applications.
+Enterprise Application Development Platform built using ReactJS and .NET ecosystem principles.
 
-It is designed to be installed into multiple apps such as:
+WG Platform is a configuration-driven frontend platform that enables rapid development of enterprise applications through reusable engines, routing runtime, dynamic forms, workflow automation, API orchestration, and role-based access control.
 
-- CRM
-- HRMS
-- Inventory
-- Workflow
-- ERP
+Used as the foundation for:
+- WGNest
+- CRM Systems
+- HRMS Applications
+- Inventory Systems
+- Workflow Platforms
 
-This package is not a business module.
-It does not contain CRM logic, SAP logic, ERP rules, or domain-specific screens.
+## Why WG Platform?
 
-It gives you the reusable building blocks that apps can share:
+Traditional applications repeatedly implement:
 
-- form engine
-- list engine
-- CRUD helpers
-- centralized API layer
-- validation helpers
-- input registry
-- reusable MUI and HTML adapters
-- UI primitives
-- theme and provider setup
+- Forms
+- Tables
+- Validation
+- Routing
+- Permissions
+- API Integration
+
+WG Platform standardizes these concerns into reusable platform capabilities, reducing duplicate development effort and accelerating application delivery.
+
+## Key Capabilities
+
+✅ Dynamic Routing Runtime
+
+✅ Feature Registry
+
+✅ Role & Permission Engine
+
+✅ Dynamic Form Engine
+
+✅ Dynamic Table Engine
+
+✅ Workflow Engine
+
+✅ API Gateway
+
+✅ Synchronization Framework
+
+✅ Query & Filter Engine
+
+✅ React Query Integration
+
+✅ SignalR Integration
+
+✅ Metadata Driven UI
+
+✅ Low-Code Development Approach
 
 ## Table of Contents
 
