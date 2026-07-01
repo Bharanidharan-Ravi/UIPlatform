@@ -9,8 +9,10 @@ import {
   ListItemText,
   Tooltip,
 } from "@mui/material";
+import { useTheme, alpha } from "@mui/material/styles";
 
 import { NavLink } from "react-router-dom";
+import { usePlatformConfig } from "../../../providers/PlatformConfigContext.jsx";
 
 /**
  * SidebarItem
@@ -33,6 +35,9 @@ const SidebarItem = ({
     icon: IconComponent,
   } = item;
 
+  const theme = useTheme();
+  const { layoutOptions = {} } = usePlatformConfig();
+
   return (
     <Tooltip
       title={collapsed ? label : ""}
@@ -49,11 +54,17 @@ const SidebarItem = ({
           justifyContent: collapsed
             ? "center"
             : "flex-start",
+          color: "text.primary",
 
           "&.active": {
-            backgroundColor: "#e8f0fe",
+            backgroundColor: alpha(theme.palette.primary.main, 0.12),
+            color: "primary.main",
             fontWeight: 600,
+            "& .MuiListItemIcon-root": {
+              color: "primary.main",
+            },
           },
+          ...layoutOptions.sidebarItemSx,
         }}
       >
         {/* Navigation Icon */}

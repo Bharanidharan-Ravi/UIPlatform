@@ -17,7 +17,7 @@ export function buildNavigationTree(
     const {
       label,
       order = 0,
-      group = "General",
+      group,
     } = route.sidebar;
 
     if (!groups[group]) {

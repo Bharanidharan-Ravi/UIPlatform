@@ -29,6 +29,7 @@ const Sidebar = ({
   navigation = [],
   collapsed = false,
   branding = {},
+  layoutOptions = {},
   onToggleCollapse,
   showCollapseButton = true,
 }) => {   
@@ -40,7 +41,8 @@ const Sidebar = ({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        backgroundColor: "#ffffff",
+        backgroundColor: "background.paper",
+        ...layoutOptions.sidebarSx
       }}
     >
       {/* Sidebar Header */}
@@ -51,9 +53,11 @@ const Sidebar = ({
           alignItems: "center",
           justifyContent: collapsed ? "center" : "space-between",
           px: collapsed ? 1 : 2,
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid",
+          borderColor: "divider",
         }}
       >
+
         {!collapsed && (
           <Typography
             variant="h6"
@@ -125,7 +129,9 @@ Sidebar.propTypes = {
 
   collapsed: PropTypes.bool,
 
-  title: PropTypes.string,
+  branding: PropTypes.object,
+
+  layoutOptions: PropTypes.object,
 
   onToggleCollapse: PropTypes.func,
 
