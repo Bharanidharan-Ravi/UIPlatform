@@ -33,6 +33,10 @@ const SidebarCollapseButton = ({
       <IconButton
         size="small"
         onClick={onToggle}
+        sx={{
+          transition: "transform 0.3s ease",
+          transform: collapsed ? "rotate(180deg)" : "rotate(0deg)",
+        }}
       >
         {children || "||"}
       </IconButton>

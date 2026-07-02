@@ -9,6 +9,7 @@ import { createPlatformTheme } from '../themes/createPlatformTheme.js';
 import { ApiProvider } from './ApiProvider.jsx';
 import { QueryProvider } from './QueryProvider.jsx';
 import { PlatformConfigContext } from './PlatformConfigContext.jsx';
+import { platformLog } from '../debug/logger.js';
 
 export function PlatformProvider({
   children,
@@ -34,6 +35,10 @@ export function PlatformProvider({
     () => theme || createPlatformTheme(themeOptions),
     [theme, themeOptions]
   );
+
+  useMemo(() => {
+    platformLog('LAYOUT', 'Platform layoutOptions initialized:', layoutOptions);
+  }, [layoutOptions]);
 
   return (
     <PlatformConfigContext.Provider value={{ layoutOptions }}>

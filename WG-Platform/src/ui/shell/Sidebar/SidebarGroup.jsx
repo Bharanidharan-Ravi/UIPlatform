@@ -16,18 +16,21 @@ import SidebarItem from "./SidebarItem";
  * Navigation group renderer.
  *
  * Responsibilities:
- * - Render grouped navigation items
- * - Render group label
  * - Support collapsed mode
  */
+import { usePlatformConfig } from "../../../providers/PlatformConfigContext.jsx";
+
 const SidebarGroup = ({
   group,
   collapsed = false,
 }) => {
+  const { layoutOptions = {} } = usePlatformConfig();
+  const hideGroupHeaders = layoutOptions.sidebar?.hideGroupHeaders;
+
   return (
     <Box>
       {/* Group Title */}
-      {!collapsed && group.group && (
+      {!collapsed && group.group && !hideGroupHeaders && (
         <Typography
           variant="caption"
           sx={{

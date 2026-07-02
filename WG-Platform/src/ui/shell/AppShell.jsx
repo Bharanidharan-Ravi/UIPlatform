@@ -73,7 +73,7 @@ const AppShell = ({
             transition: "width 0.2s ease-in-out",
             borderRight: "1px solid",
             borderColor: "divider",
-            backgroundColor: "background.paper",
+            backgroundColor: layoutOptions.sidebar?.className ? "transparent" : "background.paper",
             zIndex: 1200,
           }}
         >

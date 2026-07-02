@@ -54,17 +54,29 @@ const SidebarItem = ({
           justifyContent: collapsed
             ? "center"
             : "flex-start",
-          color: "text.primary",
+          
+          ...(!layoutOptions.sidebar?.itemClassName && {
+            color: "text.primary",
+          }),
 
           "&.active": {
-            backgroundColor: alpha(theme.palette.primary.main, 0.12),
-            color: "primary.main",
-            fontWeight: 600,
-            "& .MuiListItemIcon-root": {
+            ...(!layoutOptions.sidebar?.activeItemClassName && {
+              backgroundColor: alpha(theme.palette.primary.main, 0.12),
               color: "primary.main",
-            },
+              "& .MuiListItemIcon-root": {
+                color: "primary.main",
+              },
+            })
           },
+          ...layoutOptions.sidebar?.itemSx,
           ...layoutOptions.sidebarItemSx,
+        }}
+        className={({ isActive }) => {
+          let classes = layoutOptions.sidebar?.itemClassName || "";
+          if (isActive) {
+            classes += ` active ${layoutOptions.sidebar?.activeItemClassName || ""}`;
+          }
+          return classes.trim();
         }}
       >
         {/* Navigation Icon */}
@@ -73,9 +85,14 @@ const SidebarItem = ({
             sx={{
               minWidth: collapsed ? 0 : 40,
               justifyContent: "center",
+              color: "inherit",
             }}
           >
-            <IconComponent fontSize="small" />
+            {React.isValidElement(IconComponent) ? (
+              IconComponent
+            ) : typeof IconComponent === "function" || (typeof IconComponent === "object" && IconComponent.$$typeof) ? (
+              <IconComponent size={20} fontSize="small" />
+            ) : null}
           </ListItemIcon>
         )}
 

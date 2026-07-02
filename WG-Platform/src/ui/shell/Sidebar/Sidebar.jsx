@@ -33,15 +33,22 @@ const Sidebar = ({
   onToggleCollapse,
   showCollapseButton = true,
 }) => {   
-  const { title, footer } = branding;
+  const { title, footer, logo: LogoComponent, logoClassName } = branding;
+  console.log("layoutOptions test :", layoutOptions);
+  
   return (
     <Box
+      className={layoutOptions.sidebar?.className}
       sx={{
         height: "100vh",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        backgroundColor: "background.paper",
+        ...(!layoutOptions.sidebar?.className && {
+          backgroundColor: "background.paper",
+          color: "text.primary",
+        }),
+        ...layoutOptions.sidebar?.sx,
         ...layoutOptions.sidebarSx
       }}
     >
@@ -52,25 +59,50 @@ const Sidebar = ({
           display: "flex",
           alignItems: "center",
           justifyContent: collapsed ? "center" : "space-between",
-          px: collapsed ? 1 : 2,
+          px: collapsed ? 1.5 : 2,
           borderBottom: "1px solid",
           borderColor: "divider",
+          gap: 1,
         }}
       >
-
-        {!collapsed && (
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {title || "Application"}
-          </Typography>
+        {collapsed ? (
+          LogoComponent && (
+            <Box 
+              className={logoClassName}
+              onClick={onToggleCollapse}
+              sx={{ cursor: "pointer" }}
+            >
+              {React.isValidElement(LogoComponent) ? (
+                LogoComponent
+              ) : (
+                <LogoComponent size={24} />
+              )}
+            </Box>
+          )
+        ) : (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, overflow: "hidden" }}>
+            {LogoComponent && (
+              <Box className={logoClassName} sx={{ flexShrink: 0 }}>
+                {React.isValidElement(LogoComponent) ? (
+                  LogoComponent
+                ) : (
+                  <LogoComponent size={24} />
+                )}
+              </Box>
+            )}
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {title || "Application"}
+            </Typography>
+          </Box>
         )}
 
-        {showCollapseButton && (
+        {showCollapseButton && (!collapsed || !LogoComponent) && (
           <SidebarCollapseButton
             collapsed={collapsed}
             onToggle={onToggleCollapse}
@@ -110,14 +142,43 @@ const Sidebar = ({
 
       <Box
         sx={{
-          px: 2,
+          px: collapsed ? 1.5 : 2,
           py: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "flex-start",
+          gap: 1,
         }}
       >
-        {!collapsed && (
-          <Typography variant="caption" color="text.secondary">
-           {footer || ""}
-          </Typography>
+        {collapsed ? (
+          (branding.footerLogo || LogoComponent) && (
+            <Box 
+              className={branding.footerLogoClassName || logoClassName}
+              onClick={onToggleCollapse}
+              sx={{ cursor: "pointer" }}
+            >
+              {React.isValidElement(branding.footerLogo || LogoComponent) ? (
+                branding.footerLogo || LogoComponent
+              ) : (
+                React.createElement(branding.footerLogo || LogoComponent, { size: 24 })
+              )}
+            </Box>
+          )
+        ) : (
+          <>
+            {(branding.footerLogo || LogoComponent) && (
+              <Box className={branding.footerLogoClassName || logoClassName} sx={{ flexShrink: 0 }}>
+                {React.isValidElement(branding.footerLogo || LogoComponent) ? (
+                  branding.footerLogo || LogoComponent
+                ) : (
+                  React.createElement(branding.footerLogo || LogoComponent, { size: 20 })
+                )}
+              </Box>
+            )}
+            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap", overflow: "hidden" }}>
+              {footer || ""}
+            </Typography>
+          </>
         )}
       </Box>
     </Box>

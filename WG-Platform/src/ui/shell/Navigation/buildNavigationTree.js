@@ -15,9 +15,7 @@ export function buildNavigationTree(
     }
 
     const {
-      label,
-      order = 0,
-      group,
+      group = '',
     } = route.sidebar;
 
     if (!groups[group]) {
@@ -25,9 +23,8 @@ export function buildNavigationTree(
     }
 
     groups[group].push({
-      label,
+      ...route.sidebar,
       path: route.path,
-      order,
     });
   });
 
