@@ -1,13 +1,16 @@
-import { Fragment } from 'react';
-import { FORM, platformLog } from '../../debug/index.js';
-import { getInputComponent, inputRegistry } from '../../registry/inputRegistry.js';
-import { useFormEngine } from './useFormEngine.js';
-import FormikConfigEngine from './FormikConfigEngine.jsx';
-import { mapFormValues } from './valueMapper.js';
+import { Fragment } from "react";
+import { FORM, platformLog } from "../../debug/index.js";
+import {
+  getInputComponent,
+  inputRegistry,
+} from "../../registry/inputRegistry.js";
+import { useFormEngine } from "./useFormEngine.js";
+import FormikConfigEngine from "./FormikConfigEngine.jsx";
+import { mapFormValues } from "./valueMapper.js";
 
 export function FormEngine({
   schema = [],
-  adapter = 'mui',
+  adapter = "mui",
   registry = inputRegistry,
   components = {},
   value,
@@ -21,13 +24,13 @@ export function FormEngine({
   actions,
   disabled = false,
   readOnly = false,
-  className = '',
-  formProps = {}
+  className = "",
+  formProps = {},
 }) {
   const usingFormik =
-    adapter === 'formik' ||
-    (formProps && formProps.formType === 'formik') ||
-    (typeof schema === 'object' && schema?.formType === 'formik');
+    adapter === "formik" ||
+    (formProps && formProps.formType === "formik") ||
+    (typeof schema === "object" && schema?.formType === "formik");
 
   const engine = usingFormik
     ? null
@@ -39,32 +42,40 @@ export function FormEngine({
         onSubmit,
         validation,
         resolver,
-        valueMapper
+        valueMapper,
       });
 
-  platformLog(FORM, 'Form render', {
+  platformLog(FORM, "Form render", {
     adapter,
     fieldCount: schema.length,
-    controlled: value !== undefined
+    controlled: value !== undefined,
   });
 
   if (usingFormik) {
-    // Prefer a `config` object when provided; otherwise build one from the schema/defaultValue
-    const configObj = formProps?.config || (typeof schema === 'object' && schema?.fields ? schema : null);
+    const configObj =
+      formProps?.config ||
+      (typeof schema === "object" && schema?.fields ? schema : null);
 
-    const builtConfig =
-      configObj ||
-      ({ ui: adapter, formType: 'formik', initialValues: defaultValue, fields: schema });
+    const builtConfig = configObj || {
+      ui: adapter,
+      formType: "formik",
+      initialValues: defaultValue,
+      fields: schema,
+    };
 
     return (
       <FormikConfigEngine
         config={builtConfig}
+        fieldProps={formProps.fieldProps || {}}
+        buttonProps={formProps.buttonProps || {}}
         onSubmit={(values, formikBag) => {
-          // Map values using the existing valueMapper if provided
-          const mapped = typeof valueMapper === 'function' ? valueMapper(values, schema) : values;
+          const mapped =
+            typeof valueMapper === "function"
+              ? valueMapper(values, schema)
+              : values;
           onSubmit?.(mapped, formikBag);
         }}
-        submitLabel={formProps.submitLabel || 'Submit'}
+        submitLabel={formProps.submitLabel || "Submit"}
         showDebug={formProps.showDebug || false}
       />
     );
@@ -78,36 +89,27 @@ export function FormEngine({
       onSubmit={engine.handleSubmit}
     >
       {schema.map((field) => {
-        if (!field?.name || field.hidden) {
-          return null;
-        }
+        if (!field?.name || field.hidden) return null;
 
         const Component =
           components[field.name] ||
           field.component ||
           getInputComponent({
             adapter: field.adapter || adapter,
-            type: field.type || 'text',
-            registry
+            type: field.type || "text",
+            registry,
           });
 
-        if (!Component) {
-          platformLog(FORM, 'Field component missing', {
-            name: field.name,
-            type: field.type || 'text',
-            adapter: field.adapter || adapter
-          });
-          return null;
-        }
+        if (!Component) return null;
 
         const fieldProps = {
           field,
           disabled: disabled || Boolean(field.disabled),
           readOnly: readOnly || Boolean(field.readOnly),
-          ...engine.getFieldProps(field)
+          ...engine.getFieldProps(field),
         };
 
-        if (typeof renderField === 'function') {
+        if (typeof renderField === "function") {
           return (
             <Fragment key={field.name}>
               {renderField(fieldProps, engine)}
@@ -117,7 +119,6 @@ export function FormEngine({
 
         return <Component key={field.name} {...fieldProps} />;
       })}
-
       {actions}
     </form>
   );

@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "formik": "^2.4.9",
+    "lucide-react": "^1.23.0",
     "prop-types": "^15.8.1",
     "yup": "^1.7.1"
   }

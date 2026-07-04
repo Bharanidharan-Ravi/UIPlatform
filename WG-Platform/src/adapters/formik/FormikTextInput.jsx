@@ -23,7 +23,7 @@ export function FormikTextInput({
       meta = tuple[1];
     }
   } catch (e) {
-    // not inside Formik context
+    // Not inside Formik context
     formikField = null;
     meta = null;
   }
@@ -31,9 +31,26 @@ export function FormikTextInput({
   const hasError = Boolean(formikField ? meta?.touched && meta?.error : error);
   const displayHelper = formikField ? meta?.error : helperText || field.helperText;
 
+  // FIX: Resolve value prioritizing Formik State -> Passed Value Prop -> Schema Default -> Fallback Empty String
+  const resolvedValue = formikField?.value ?? value ?? field.defaultValue ?? '';
+console.log("field L:", field, resolvedValue);
+
   const inputProps = formikField
-    ? { id: name, name, ...(field.props || {}), ...formikField }
-    : { id: name, name, ...(field.props || {}), value: value ?? '', onChange, onBlur };
+    ? { 
+        id: name, 
+        name, 
+        ...(field.props || {}), 
+        ...formikField, 
+        value: resolvedValue // Force resolved value to override undefined formik context states
+      }
+    : { 
+        id: name, 
+        name, 
+        ...(field.props || {}), 
+        value: resolvedValue, 
+        onChange, 
+        onBlur 
+      };
 
   return (
     <div className="formik-field">

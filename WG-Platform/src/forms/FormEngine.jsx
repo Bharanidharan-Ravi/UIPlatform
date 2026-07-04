@@ -58,6 +58,8 @@ export function FormEngine({
     return (
       <FormikConfigEngine
         config={builtConfig}
+        fieldProps={formProps.fieldProps || {}}
+        buttonProps={formProps.buttonProps || {}}
         onSubmit={(values, formikBag) => {
           const mapped = typeof valueMapper === 'function' ? valueMapper(values, schema) : values;
           onSubmit?.(mapped, formikBag);
