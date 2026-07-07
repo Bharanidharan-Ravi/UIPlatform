@@ -19,3 +19,5 @@ export {
   useRouteAccess,
   useSmartNavigation
 } from './hooks/index.js';
+export { AccessContext, useAccess } from './AccessContext.jsx';
+

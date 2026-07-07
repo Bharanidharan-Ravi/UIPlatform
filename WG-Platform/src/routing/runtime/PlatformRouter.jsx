@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { AccessContext } from './AccessContext.jsx';
 import {
   getRouteSnapshot,
   subscribeRoutes
@@ -80,30 +81,32 @@ export function PlatformRouter({
   }, [invalidRouteEntries, onInvalidRoute]);
 
   return (
-    <Routes>
-      {validRoutes.map((route) => {
-        const routeElement = RouteRenderer({
-          route,
-          access,
-          layouts,
-          defaultLayout,
-          fallbackPath,
-          unauthorizedElement
-        });
+    <AccessContext.Provider value={access}>
+      <Routes>
+        {validRoutes.map((route) => {
+          const routeElement = RouteRenderer({
+            route,
+            access,
+            layouts,
+            defaultLayout,
+            fallbackPath,
+            unauthorizedElement
+          });
 
-        return routeElement
-          ? React.cloneElement(routeElement, { key: route.key || route.path })
-          : null;
-      })}
-      <Route
-        path="*"
-        element={
-          <NotFoundRoute
-            fallbackPath={fallbackPath}
-            notFoundElement={notFoundElement}
-          />
-        }
-      />
-    </Routes>
+          return routeElement
+            ? React.cloneElement(routeElement, { key: route.key || route.path })
+            : null;
+        })}
+        <Route
+          path="*"
+          element={
+            <NotFoundRoute
+              fallbackPath={fallbackPath}
+              notFoundElement={notFoundElement}
+            />
+          }
+        />
+      </Routes>
+    </AccessContext.Provider>
   );
 }
