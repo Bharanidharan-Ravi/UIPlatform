@@ -19,7 +19,7 @@ import { PlatformConfigContext } from "../../providers/PlatformConfigContext.jsx
  */
 const AppShell = ({
   children,
-  
+  route = null,
   // Feature Flags (Driven by Route Config/Metadata)
   showSidebar = null,
   showTopbar = null,
@@ -62,7 +62,7 @@ const AppShell = ({
   const handleToggleCollapse = () => setCollapsed((prev) => !prev);
 
   const hasHeaderConfig = !!layoutOptions.header;
-
+  const noPadding = route?.metadata?.noPadding === true;
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh", width: "100vw", overflow: "hidden" }}>
       {hasHeaderConfig && <Header />}
@@ -115,7 +115,7 @@ const AppShell = ({
               overflowY: "auto",
               overflowX: "hidden",
               backgroundColor: "background.default", // Uses theme background instead of hex
-              p: 3, // Global page padding
+              p: noPadding ? 0 : 3, 
             }}
           >
             {children}

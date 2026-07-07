@@ -11,11 +11,29 @@ import AppShell from "./AppShell";
  * Enterprise runtime layout wrapper.
  */
 
+// const AppShellLayout = ({
+//   children,
+// }) => {
+//   return (
+//     <AppShell>
+//       {children}
+//     </AppShell>
+//   );
+// };
+
+// AppShellLayout.propTypes = {
+//   children: PropTypes.node,
+// };
+
+// export default AppShellLayout;
+
+// ... existing code ...
 const AppShellLayout = ({
   children,
+  route,
 }) => {
   return (
-    <AppShell>
+    <AppShell route={route}>
       {children}
     </AppShell>
   );
@@ -23,6 +41,7 @@ const AppShellLayout = ({
 
 AppShellLayout.propTypes = {
   children: PropTypes.node,
+  route: PropTypes.object,
 };
 
 export default AppShellLayout;
