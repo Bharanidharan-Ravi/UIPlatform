@@ -20,3 +20,4 @@ export { useApiState } from './useApiState.js';
 export { useGlobalError } from './useGlobalError.js';
 export { useGlobalLoader } from './useGlobalLoader.js';
 export { useGlobalSuccess } from './useGlobalSuccess.js';
+export { useApi } from './useApi.js';

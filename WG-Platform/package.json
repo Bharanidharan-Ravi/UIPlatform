@@ -54,6 +54,7 @@
     "vite": "^8.0.13"
   },
   "dependencies": {
+    "@tanstack/react-query-devtools": "^5.101.2",
     "formik": "^2.4.9",
     "lucide-react": "^1.23.0",
     "prop-types": "^15.8.1",

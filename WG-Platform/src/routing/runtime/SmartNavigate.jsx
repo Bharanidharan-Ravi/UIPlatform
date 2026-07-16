@@ -1,3 +1,4 @@
+// src/app/SmartNavigate.jsx
 import { buildPath, normalizePath } from '../utils/pathHelpers.js';
 import { PATHS } from '../constants/PATHS.js';
 import { ROUTE_KEYS } from '../constants/ROUTE_KEYS.js';
@@ -79,8 +80,55 @@ function resolvePathTemplate(routeKeyOrPath) {
   return routeKeyOrPath;
 }
 
+/**
+ * LAYER B/DYNAMIC STEPPING SUPPORT
+ * Recursively parses layout-agnostic configuration arrays to determine sibling step anchors
+ */
+export function findSequentialSibling(currentRouteKey, direction = 1, routeList = getAllRoutes()) {
+  for (const route of routeList) {
+    if (Array.isArray(route.children)) {
+      const matchIndex = route.children.findIndex(child => child.key === currentRouteKey);
+      
+      if (matchIndex !== -1) {
+        const targetSibling = route.children[matchIndex + direction];
+        return targetSibling ? targetSibling.key : null;
+      }
+      
+      const deepMatch = findSequentialSibling(currentRouteKey, direction, route.children);
+      if (deepMatch) return deepMatch;
+    }
+  }
+  return null;
+}
+
 export function buildNavigationPath(routeKeyOrPath, params = {}, options = {}) {
   const template = resolvePathTemplate(routeKeyOrPath);
+
+  // =========================================================
+  // LAYER D: DYNAMIC PARAMETER SCHEMA VALIDATOR
+  // =========================================================
+  const dynamicParamMatches = template.match(/:[a-zA-Z0-9_]+/g) || [];
+  
+  for (const match of dynamicParamMatches) {
+    const paramName = match.replace(':', '');
+    
+    // Explicitly confirm whether the matching element parameter is marked optional ('?')
+    const isOptional = template.includes(`${match}?`);
+    
+    if (!isOptional && (params[paramName] === undefined || params[paramName] === null || String(params[paramName]).trim() === '')) {
+      console.error(
+        `%c[Platform Navigation Error]%c Missing required URL parameter: %c"${paramName}"%c for route key/path: %c"${routeKeyOrPath}"%c.\nTemplate blueprint expected: "${template}"`,
+        "color: white; background: #ef4444; padding: 2px 4px; border-radius: 4px; font-weight: bold;",
+        "color: #ef4444; font-weight: bold;",
+        "color: #1e293b; font-weight: bold; background: #f1f5f9; padding: 1px 4px; border-radius: 2px;",
+        "color: #ef4444;",
+        "color: #1e293b; font-weight: bold; background: #f1f5f9; padding: 1px 4px; border-radius: 2px;",
+        "color: inherit;"
+      );
+    }
+  }
+  // =========================================================
+
   const builtPath = buildPath(normalizePath(template), params);
   return appendNavigationParts(builtPath, options);
 }
@@ -104,7 +152,7 @@ export function goToRouteKey(navigate, routeKey, params = {}, options = {}) {
   return navigateWithParams(navigate, routeKey, params, options);
 }
 
-export function goBackSafe(navigate, fallbackPath = '/', options = {}) {
+export function goBackSafe(navigate, fallbackRouteKeyOrPath = '/', options = {}) {
   if (typeof navigate !== 'function') {
     return undefined;
   }
@@ -119,7 +167,13 @@ export function goBackSafe(navigate, fallbackPath = '/', options = {}) {
     return navigate(-1);
   }
 
-  return navigate(fallbackPath, {
+  const resolvedPath = buildNavigationPath(
+    fallbackRouteKeyOrPath, 
+    options.fallbackParams || {}, 
+    options
+  );
+
+  return navigate(resolvedPath, {
     replace: options.replace !== undefined ? options.replace : true,
     state: options.state
   });

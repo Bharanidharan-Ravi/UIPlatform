@@ -9,3 +9,4 @@ export * from './sync/index.js';
 export * from './validation/index.js';
 export * from './workflow/index.js';
 export * from '../routing/index.js';
+export * from '../engines/search/index.js';
