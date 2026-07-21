@@ -43,6 +43,8 @@ const Header = () => {
 
   // 1. Process and filter menu items based on role
   const rawItems = headerConfig.items || {};
+  console.log("role :", access);
+
   const menuItems = Object.entries(rawItems)
     .map(([key, item]) => ({ key, ...item }))
     .filter((item) => {
@@ -98,7 +100,10 @@ const Header = () => {
     if (React.isValidElement(IconComponent)) {
       return IconComponent;
     }
-    if (typeof IconComponent === "function" || typeof IconComponent === "object") {
+    if (
+      typeof IconComponent === "function" ||
+      typeof IconComponent === "object"
+    ) {
       return <IconComponent {...props} />;
     }
     return null;
@@ -110,12 +115,16 @@ const Header = () => {
       return true;
     }
     if (item.dropdown === "yes" && Array.isArray(item.dropdownValues)) {
-      return item.dropdownValues.some((val) => location.pathname === val.routingPath);
+      return item.dropdownValues.some(
+        (val) => location.pathname === val.routingPath,
+      );
     }
     return false;
   };
 
-  const activeDropdownItem = menuItems.find((item) => item.key === activeDropdownKey);
+  const activeDropdownItem = menuItems.find(
+    (item) => item.key === activeDropdownKey,
+  );
 
   // Logo rendering
   const Logo = branding.logo;
@@ -152,7 +161,10 @@ const Header = () => {
         }}
       >
         {Logo && (
-          <Box className={logoClassName} sx={{ display: "flex", alignItems: "center" }}>
+          <Box
+            className={logoClassName}
+            sx={{ display: "flex", alignItems: "center" }}
+          >
             {renderIcon(Logo, { size: 28 })}
           </Box>
         )}
@@ -178,7 +190,8 @@ const Header = () => {
           alignItems: "center",
           gap: 0.5, // Reduced gap between items to fit better
           flex: 1,
-          justifyContent: headerConfig.alignment === "center" ? "center" : "flex-start",
+          justifyContent:
+            headerConfig.alignment === "center" ? "center" : "flex-start",
           ml: 2, // Reduced margin from logo
         }}
       >
@@ -213,26 +226,28 @@ const Header = () => {
 
           if (hasDropdown) {
             const isAdmin = item.key === "admin";
-            const dropdownButtonStyles = isAdmin ? {
-              fontSize: "12px",
-              color: "#111827",
-              backgroundColor: "transparent",
-              border: "1.5px solid #111827",
-              borderRadius: "100px",
-              px: 1.25,
-              py: 0.3,
-              textTransform: "none",
-              fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              transition: "all 0.2s ease-in-out",
-              "&:hover": {
-                backgroundColor: "#f3f4f6",
-              },
-              minHeight: "28px",
-              whiteSpace: "nowrap",
-            } : buttonStyles;
+            const dropdownButtonStyles = isAdmin
+              ? {
+                  fontSize: "12px",
+                  color: "#111827",
+                  backgroundColor: "transparent",
+                  border: "1.5px solid #111827",
+                  borderRadius: "100px",
+                  px: 1.25,
+                  py: 0.3,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    backgroundColor: "#f3f4f6",
+                  },
+                  minHeight: "28px",
+                  whiteSpace: "nowrap",
+                }
+              : buttonStyles;
 
             return (
               <Button
@@ -241,7 +256,9 @@ const Header = () => {
                 sx={dropdownButtonStyles}
               >
                 {renderIcon(item.icon, { size: 14 })}
-                <span style={{ marginLeft: "4px", marginRight: "4px" }}>{item.label}</span>
+                <span style={{ marginLeft: "4px", marginRight: "4px" }}>
+                  {item.label}
+                </span>
                 <ChevronDown size={14} />
               </Button>
             );
@@ -385,8 +402,10 @@ const Header = () => {
               }}
             >
               {/* Profile Avatar Emojis */}
-              <Box sx={{ display: "flex", alignItems: "center", fontSize: "14px" }}>
-                {access.roles?.includes("leadership") ? "👑" : "👨‍💻"}
+              <Box
+                sx={{ display: "flex", alignItems: "center", fontSize: "14px" }}
+              >
+                {access.roles?.includes("1") ? "👑" : "👨‍💻"}
               </Box>
 
               {/* User details stacked vertically for tight horizontal space */}
@@ -419,7 +438,9 @@ const Header = () => {
               </Box>
 
               {/* Separator line */}
-              <Box sx={{ height: 16, width: "1px", backgroundColor: "#d1d5db" }} />
+              <Box
+                sx={{ height: 16, width: "1px", backgroundColor: "#d1d5db" }}
+              />
 
               {/* Initials badge on far right */}
               <Avatar
@@ -444,91 +465,164 @@ const Header = () => {
               open={Boolean(profileAnchor)}
               onClose={handleProfileClose}
               sx={{
-                mt: 1.5,
+                mt: 1.7,
+                pt: 0,
+                pb: 0,
                 "& .MuiPaper-root": {
-                  borderRadius: "20px",
-                  width: 320,
-                  boxShadow: "0px 10px 30px rgba(15, 23, 42, 0.1)",
-                  border: "1px solid",
-                  borderColor: "#e2e8f0",
-                  p: 0,
+                  borderRadius: 4,
+                  width: 250,
                   overflow: "hidden",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 10px 30px rgba(15,23,42,.12)",
                 },
               }}
             >
-              {/* Profile Card Header Info */}
-              <Box sx={{ p: 3, display: "flex", gap: 2, alignItems: "center" }}>
-                <Avatar
-                  sx={{
-                    width: 54,
-                    height: 54,
-                    backgroundColor: "#1d2274",
-                    color: "#ffffff",
-                    fontSize: "20px",
-                    fontWeight: 700,
-                  }}
-                >
-                  {access.user?.avatar || "US"}
-                </Avatar>
-                <Box sx={{ display: "flex", flexDirection: "column" }}>
-                  <Typography sx={{ fontSize: "16px", fontWeight: 700, color: "#0f172a", lineHeight: 1.2 }}>
-                    {access.user?.name || "Username"}
-                  </Typography>
-                  <Typography sx={{ fontSize: "13px", fontWeight: 500, color: "#64748b", mt: 0.25 }}>
-                    {access.user?.subtitle || "User Profile"}
-                  </Typography>
-                  {access.user?.department && (
-                    <Typography sx={{ fontSize: "12px", fontWeight: 500, color: "#94a3b8", mt: 0.5 }}>
-                      {access.user.department}
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-
-              <Divider sx={{ borderColor: "#f1f5f9" }} />
-
-              {/* Mobile Info */}
-              <Box sx={{ p: "16px 24px" }}>
-                <Typography sx={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", letterSpacing: "0.5px", mb: 0.5 }}>
-                  MOBILE
-                </Typography>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography sx={{ fontSize: "14px", fontWeight: 600, color: "#334155" }}>
-                    {access.user?.mobile || "+91 0000000000"}
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "#10b981" }} />
-                    <Typography sx={{ fontSize: "12px", fontWeight: 600, color: "#64748b" }}>
-                      Active
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-
-              <Divider sx={{ borderColor: "#f1f5f9" }} />
-
-              {/* Sign Out Button */}
               <Box
-                onClick={handleLogout}
                 sx={{
-                  p: "14px 24px",
+                  pt: 0,
+                  pb: 1,
+                  px: 2,
                   display: "flex",
+                  gap: 2,
                   alignItems: "center",
-                  gap: 1.5,
-                  cursor: "pointer",
-                  transition: "background-color 0.2s ease-in-out",
-                  "&:hover": {
-                    backgroundColor: "#fef2f2",
-                  },
                 }}
               >
-                <Box sx={{ display: "flex", color: "#ef4444" }}>
-                  <LogOut size={16} />
+                <Avatar
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    bgcolor: "#1d2274",
+                    fontWeight: 600,
+                    fontSize: 14,
+                  }}
+                >
+                  {access.user?.avatar}
+                </Avatar>
+
+                <Box>
+                  <Typography
+                    sx={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {access.user?.name}
+                  </Typography>
+
+                  {access.user?.menu
+                    ?.filter((x) => x.type === "text")
+                    .map((item, index) => (
+                      <Typography
+                        key={index}
+                        sx={{
+                          fontSize: 11,
+                          color: "#64748b",
+                        }}
+                      >
+                        {item.value}
+                      </Typography>
+                    ))}
                 </Box>
-                <Typography sx={{ fontSize: "14px", fontWeight: 700, color: "#ef4444" }}>
-                  Sign Out
-                </Typography>
               </Box>
+
+              <Divider />
+
+              {access.user?.menu?.map((item, index) => {
+                switch (item.type) {
+                  case "divider":
+                    return <Divider key={index} />;
+
+                  case "action":
+                    return (
+                      <Box
+                        key={index}
+                        onClick={() => {
+                          handleProfileClose();
+
+                          switch (item.key) {
+                            case "profile":
+                              navigate("/profile");
+
+                              break;
+
+                            case "password":
+                              navigate("/change-password");
+
+                              break;
+
+                            case "logout":
+                              handleLogout();
+
+                              break;
+
+                            default:
+                              break;
+                          }
+                        }}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          px: 3,
+                          py: 2,
+                          cursor: "pointer",
+
+                          "&:hover": {
+                            bgcolor: "#f8fafc",
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 36,
+
+                            height: 36,
+
+                            borderRadius: 2,
+
+                            bgcolor: "#f8fafc",
+
+                            display: "flex",
+
+                            alignItems: "center",
+
+                            justifyContent: "center",
+
+                            color:
+                              item.color === "error" ? "#ef4444" : "#64748b",
+                          }}
+                        >
+                          {renderIcon(item.icon, { size: 16 })}
+                        </Box>
+
+                        <Box flex={1}>
+                          <Typography
+                            sx={{
+                              fontSize: 14,
+                              fontWeight: 600,
+                            }}
+                            fontWeight={600}
+                            fontSize={12}
+                            color={
+                              item.color === "error" ? "#ef4444" : "#0f172a"
+                            }
+                          >
+                            {item.title}
+                          </Typography>
+
+                          {item.subtitle && (
+                            <Typography fontSize={12} color="#94a3b8">
+                              {item.subtitle}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    );
+
+                  default:
+                    return null;
+                }
+              })}
             </Menu>
           </>
         )}
