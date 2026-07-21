@@ -6,7 +6,7 @@ import SearchExecutor from './core/SearchExecutorLocal.js';
 /**
  * @fileoverview Unified enterprise facade and pluggable orchestration engine for the WG UI Platform Search Module.
  * Implements a high-performance lazy-indexing pipeline architecture with aggressive query memoization,
- * O(1) document caching, and zero-throw execution boundaries.
+ * O(1) document caching, custom primary key field extraction, and zero-throw execution boundaries.
  */
 
 /**
@@ -20,6 +20,7 @@ import SearchExecutor from './core/SearchExecutorLocal.js';
  * @property {boolean} [autoIndex=false] - If true, forces proactive index compilation on every mutation. Defaults to false for high performance.
  * @property {boolean} [ignoreCase=true] - Forces uniform case normalization loops.
  * @property {boolean} [debug=false] - Enables diagnostic console instrumentation.
+ * @property {string|Function} [keyField="id"] - Targeted primary lookup field path string or functional extractor.
  * @property {Object} [Normalizer=SearchNormalizer] - Pluggable static normalizer class implementation override.
  * @property {Object} [Indexer=SearchIndexer] - Pluggable indexer instantiation class override.
  * @property {Object} [Parser=SearchParser] - Pluggable syntax parser instantiation class override.
@@ -76,21 +77,22 @@ export default class SearchEngine {
     this.#options = {
       mode: 'local',
       cache: true,
-      autoIndex: false, // Fixed Issue 6: Default to high-performance lazy indexing
+      autoIndex: false,
       ignoreCase: true,
       debug: false,
-      Normalizer: SearchNormalizer, // Fixed Architecture Suggestion: Replaceable Pipeline Components
+      keyField: 'id', // Normalized default tracking attribute primary key
+      Normalizer: SearchNormalizer,
       Indexer: SearchIndexer,
       Parser: SearchParser,
       Executor: SearchExecutor,
       ...options
     };
 
-    // Fast-path lookup data structures (Fixed Issue 4 & 5)
+    // Fast-path lookup data structures
     this.#documents = [];
     this.#documentMap = new Map();
     this.#queryCache = new Map();
-    
+
     this.#lastIndexed = null;
     this.#isDirty = false;
 
@@ -100,7 +102,7 @@ export default class SearchEngine {
     this.#executor = new this.#options.Executor();
 
     if (this.#options.debug) {
-      console.info(`[SearchEngine] Pipeline initialized successfully. Mode: ${this.#options.mode}`);
+      console.info(`[SearchEngine] Pipeline initialized successfully. Mode: ${this.#options.mode} | Key Field: ${this.#options.keyField}`);
     }
   }
 
@@ -117,7 +119,6 @@ export default class SearchEngine {
       data = [];
     }
 
-    // Direct linear array assignment (Fixed Issue 4 & 5)
     this.#documents = [...data];
     this.#documentMap.clear();
     this.#queryCache.clear();
@@ -125,8 +126,10 @@ export default class SearchEngine {
     const count = this.#documents.length;
     for (let i = 0; i < count; i++) {
       const item = this.#documents[i];
-      if (item && item.id !== undefined && item.id !== null) {
-        this.#documentMap.set(item.id, item);
+      const key = this.#getKey(item);
+
+      if (key !== undefined && key !== null) {
+        this.#documentMap.set(key, item);
       }
     }
 
@@ -145,14 +148,16 @@ export default class SearchEngine {
    * @returns {SearchEngine} Current instance context references.
    */
   add(item) {
-    if (!item || item.id === undefined || item.id === null) {
+    const key = this.#getKey(item);
+
+    if (key === undefined || key === null) {
       return this;
     }
 
     this.#documents.push(item);
-    this.#documentMap.set(item.id, item);
-    
-    this.#isDirty = true; // Fixed Issue 6: Defers costly index compilation lazily
+    this.#documentMap.set(key, item);
+
+    this.#isDirty = true;
     this.#queryCache.clear();
 
     if (this.#options.autoIndex) {
@@ -177,15 +182,17 @@ export default class SearchEngine {
 
     for (let i = 0; i < count; i++) {
       const item = items[i];
-      if (item && item.id !== undefined && item.id !== null) {
+      const key = this.#getKey(item);
+
+      if (key !== undefined && key !== null) {
         this.#documents.push(item);
-        this.#documentMap.set(item.id, item);
-        entriesMutated = true;
+        this.#documentMap.set(key, item);
+        entriesMutated = true; // Fixed optimization state mutation check tracker
       }
     }
 
     if (entriesMutated) {
-      this.#isDirty = true; // Fixed Issue 6: Defers compilation out of heavy batch insert loops
+      this.#isDirty = true;
       this.#queryCache.clear();
       if (this.#options.autoIndex) {
         this.rebuild();
@@ -201,17 +208,17 @@ export default class SearchEngine {
    * @returns {SearchEngine} Current instance context references.
    */
   update(item) {
-    if (!item || item.id === undefined || item.id === null) {
+    const key = this.#getKey(item);
+
+    if (key === undefined || key === null) {
       return this;
     }
 
-    // Evict existing version from backing array to avoid structural bloat
-    const targetId = item.id;
     const count = this.#documents.length;
     let foundIndex = -1;
 
     for (let i = 0; i < count; i++) {
-      if (this.#documents[i].id === targetId) {
+      if (this.#getKey(this.#documents[i]) === key) {
         foundIndex = i;
         break;
       }
@@ -223,7 +230,7 @@ export default class SearchEngine {
       this.#documents.push(item);
     }
 
-    this.#documentMap.set(targetId, item);
+    this.#documentMap.set(key, item);
     this.#isDirty = true;
     this.#queryCache.clear();
 
@@ -249,10 +256,10 @@ export default class SearchEngine {
     }
 
     this.#documentMap.delete(id);
-    
+
     const count = this.#documents.length;
     for (let i = 0; i < count; i++) {
-      if (this.#documents[i].id === id) {
+      if (this.#getKey(this.#documents[i]) === id) {
         this.#documents.splice(i, 1);
         break;
       }
@@ -277,12 +284,13 @@ export default class SearchEngine {
       return this;
     }
 
-    // Fixed Issue 1 & 2: Pass full array array directly to the static normalizer call surface
-    const normalizedCollection = this.#options.Normalizer.normalize(this.#documents);
-    
-    // Pass normalized array payload directly into pluggable index builder
+    // Pass structured key options directly into normalizer pipeline execution contract
+    const normalizedCollection = this.#options.Normalizer.normalize(this.#documents, {
+      keyField: this.#options.keyField
+    });
+
     this.#indexer.build(normalizedCollection);
-    
+
     this.#queryCache.clear();
     this.#lastIndexed = new Date();
     this.#isDirty = false;
@@ -315,19 +323,16 @@ export default class SearchEngine {
       return this.#generateEmptyResponse();
     }
 
-    // Fixed Issue 8: Space-insensitive structural key normalization logic configuration path
     const cacheKey = query.replace(/\s+/g, ' ').trim().toLowerCase();
-    
+
     if (this.#options.cache && this.#queryCache.has(cacheKey)) {
       return this.#queryCache.get(cacheKey);
     }
 
-    // Lazy initialization checkpoint verification
     if (this.#isDirty) {
       this.rebuild();
     }
 
-    // Dynamic processing run: Parse -> Execute
     const parsedQuery = this.#parser.parse(query);
     const executionResult = this.searchParsed(parsedQuery);
 
@@ -348,7 +353,6 @@ export default class SearchEngine {
       this.rebuild();
     }
 
-    // Fixed Issue 7: Graceful future-proof remote execution strategy block fallback
     if (this.#options.mode === 'remote') {
       return Object.freeze({
         matchedIds: new Set(),
@@ -360,10 +364,8 @@ export default class SearchEngine {
       });
     }
 
-    // Execute matching procedures across standard indexing spaces
     const output = this.#executor.execute(this.#indexer, parsedQuery);
 
-    // Fast O(1) correlation step mapping output keys to raw source collections
     const rawMatchedDocuments = [];
     for (const docId of output.matchedIds) {
       const rawDoc = this.#documentMap.get(docId);
@@ -380,7 +382,7 @@ export default class SearchEngine {
   }
 
   /**
-   * Retrieves an original un-normalized raw entity record by its primary identity key mapping.
+   * Extracts an original un-normalized raw entity record by its primary identity key mapping.
    * @param {DocumentId} id - Target index unique marker parameters field flag.
    * @returns {Object|undefined} Target tracking data object, or undefined if missing.
    */
@@ -393,7 +395,7 @@ export default class SearchEngine {
 
   /**
    * Returns a complete sequential array listing containing all raw tracking source entries.
-   * @returns {Object[]} Fast native clone slice of the internal source data arrays (Fixed Issue 4).
+   * @returns {Object[]} Fast native clone slice of the internal source data arrays.
    */
   getDocuments() {
     return [...this.#documents];
@@ -401,7 +403,7 @@ export default class SearchEngine {
 
   /**
    * Inspects whether the internal index is synchronized with all ongoing data modifications.
-   * @returns {boolean} True if the index requires zero structural compilations (Fixed Issue 9).
+   * @returns {boolean} True if the index requires zero structural compilations.
    */
   isIndexed() {
     return !this.#isDirty && this.#lastIndexed !== null;
@@ -409,7 +411,7 @@ export default class SearchEngine {
 
   /**
    * Exposes the underlying compiled index instance tracking configuration settings.
-   * @returns {SearchIndexer} Active data index lookup context boundaries maps (Fixed Issue 10).
+   * @returns {SearchIndexer} Active data index lookup context boundaries maps.
    */
   getIndex() {
     return this.#indexer;
@@ -486,6 +488,23 @@ export default class SearchEngine {
     if (this.#options.debug) {
       console.info('[SearchEngine] Facade instance broken down securely.');
     }
+  }
+
+  /**
+   * Extract key identifiers dynamically using configured options configuration strategy.
+   * Supports custom database text keys or programmatic inline mapper functions.
+   * @param {Object} item - Data target containing key parameters fields.
+   * @returns {DocumentId|undefined} Extracted key value mapping, or undefined if missing.
+   */
+  #getKey(item) {
+    if (!item) {
+      return undefined;
+    }
+    const extractor = this.#options.keyField;
+    if (typeof extractor === 'function') {
+      return extractor(item);
+    }
+    return item[extractor];
   }
 
   /**

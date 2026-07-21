@@ -1,7 +1,7 @@
 /**
- * @fileoverview High-performance enterprise search indexer for the WG UI Platform.
- * Provides inverted mapping indexes for rapid full-text and field-level query matches.
- * Optimized for large datasets with minimal object allocation and O(1) lookups.
+ * @fileoverview High-performance enterprise search indexer V2 for the WG UI Platform.
+ * Provides inverted mapping indexes for rapid full-text, field-level, prefix, and contains query matches.
+ * Optimized for large datasets with minimal object allocation, token dictionary lookups, and specialized caching.
  */
 
 /**
@@ -39,6 +39,12 @@ export default class SearchIndexer {
   /** @type {Map<string, Map<string, Set<DocumentId>>>} */
   #fieldIndex;
 
+  /** @type {Map<string, Set<DocumentId>>} */
+  #prefixCache;
+
+  /** @type {Map<string, Set<DocumentId>>} */
+  #containsCache;
+
   /** @type {number} */
   #totalTokens;
 
@@ -50,6 +56,8 @@ export default class SearchIndexer {
     this.#documentMap = new Map();
     this.#tokenIndex = new Map();
     this.#fieldIndex = new Map();
+    this.#prefixCache = new Map();
+    this.#containsCache = new Map();
     this.#totalTokens = 0;
   }
 
@@ -102,7 +110,6 @@ export default class SearchIndexer {
     }
 
     this.clear();
-    // this.#documents = [...documents];
     this.#documents = documents;
 
     const totalDocs = this.#documents.length;
@@ -252,6 +259,113 @@ export default class SearchIndexer {
   }
 
   /**
+   * Searches the unique token dictionary keys for all terms starting with the search expression.
+   * Aggregates and merges all matching document references via an internal optimization cache.
+   *
+   * @param {string} token - The prefix expression string to match against.
+   * @returns {Set<DocumentId>} A defensive clone copy of the aggregated document ID matches.
+   */
+
+  #mergeSets(target, source) {
+
+    if (!source) return;
+
+    for (const id of source) {
+
+      target.add(id);
+
+    }
+
+  }
+  getPrefixMatches(token) {
+    if (typeof token !== 'string' || !token) {
+      return new Set();
+    }
+
+    const targetPrefix = token.trim().toLowerCase();
+
+    // Check optimization cache layer
+    if (this.#prefixCache.has(targetPrefix)) {
+      return new Set(this.#prefixCache.get(targetPrefix));
+    }
+
+    const aggregatedSet = new Set();
+    const tokenIterator = this.#tokenIndex.keys();
+
+    // Fast-path iteration over token dictionary keys to avoid looping documents
+    for (const indexedToken of tokenIterator) {
+      if (indexedToken.startsWith(targetPrefix)) {
+        const matchingIds = this.#tokenIndex.get(indexedToken);
+        if (matchingIds !== undefined) {
+          this.#mergeSets(
+            aggregatedSet,
+            matchingIds
+          );
+        }
+      }
+    }
+
+    // Persist to cache and return a secure copy
+    this.#prefixCache.set(targetPrefix, aggregatedSet);
+    return new Set(aggregatedSet);
+  }
+
+  /**
+   * Searches the unique token dictionary keys for all terms containing the search expression substring.
+   * Aggregates and merges all matching document references via an internal optimization cache.
+   *
+   * @param {string} token - The substring expression to scan for.
+   * @returns {Set<DocumentId>} A defensive clone copy of the aggregated document ID matches.
+   */
+  getContainsMatches(token) {
+    if (typeof token !== 'string' || !token) {
+      return new Set();
+    }
+
+    const targetSubstring = token.toLowerCase();
+
+    // Check optimization cache layer
+    if (this.#containsCache.has(targetSubstring)) {
+      return new Set(this.#containsCache.get(targetSubstring));
+    }
+
+    const aggregatedSet = new Set();
+    const tokenIterator = this.#tokenIndex.keys();
+
+    // Fast-path iteration over token dictionary keys to avoid looping documents
+    for (const indexedToken of tokenIterator) {
+      if (indexedToken.includes(targetSubstring)) {
+        const matchingIds = this.#tokenIndex.get(indexedToken);
+        if (matchingIds !== undefined) {
+          for (const docId of matchingIds) {
+            aggregatedSet.add(docId);
+          }
+        }
+      }
+    }
+
+    // Persist to cache and return a secure copy
+    this.#containsCache.set(targetSubstring, aggregatedSet);
+    return new Set(aggregatedSet);
+  }
+  getMatches(token, matchMode = "exact") {
+
+    switch (matchMode) {
+
+      case "prefix":
+        return this.getPrefixMatches(token);
+
+      case "contains":
+        return this.getContainsMatches(token);
+
+      case "exact":
+      default:
+        return this.getTokenMatches(token);
+
+    }
+
+  }
+  /**
    * Inspects if a target token exists globally within the active inverted space registry.
    *
    * @param {string} token - Target checking expression token.
@@ -299,9 +413,12 @@ export default class SearchIndexer {
     this.#documentMap.clear();
     this.#tokenIndex.clear();
     this.#fieldIndex.clear();
+    this.#prefixCache.clear();
+    this.#containsCache.clear();
     this.#totalTokens = 0;
     return this;
   }
+
 
   /**
    * Destroys the indexer instance safely by cleaning up allocated internal data structures.

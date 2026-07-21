@@ -59,7 +59,20 @@ export default class SearchNormalizer {
    * @param {Object} options
    * @returns {Object}
    */
-  static extractId(item) {
+  static extractId(item, options = {}) {
+
+    const keyField = options.keyField;
+
+    // Consumer-defined key
+    if (
+      keyField &&
+      item[keyField] !== undefined &&
+      item[keyField] !== null
+    ) {
+      return item[keyField];
+    }
+
+    // Automatic fallback
     return (
       item.id ??
       item.Id ??
@@ -71,6 +84,7 @@ export default class SearchNormalizer {
       item.key ??
       null
     );
+
   }
   static normalizeItem(item = {}, options = {}) {
     const fields = {};
@@ -82,7 +96,7 @@ export default class SearchNormalizer {
     ];
 
     const searchText = tokens.join(" ");
-    const id = this.extractId(item);
+    const id = this.extractId(item, options);
     return {
       id,
 
