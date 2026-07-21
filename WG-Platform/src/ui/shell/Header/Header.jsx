@@ -461,6 +461,9 @@ const Header = () => {
 
             {/* Profile Dropdown Menu */}
             <Menu
+              MenuListProps={{
+                disablePadding: true,
+              }}
               anchorEl={profileAnchor}
               open={Boolean(profileAnchor)}
               onClose={handleProfileClose}
@@ -525,12 +528,23 @@ const Header = () => {
                 </Box>
               </Box>
 
-              <Divider />
+              <Divider
+                sx={{
+                  m: 0,
+                }}
+              />
 
               {access.user?.menu?.map((item, index) => {
                 switch (item.type) {
                   case "divider":
-                    return <Divider key={index} />;
+                    return (
+                      <Divider
+                        key={index}
+                        sx={{
+                          m: 0,
+                        }}
+                      />
+                    );
 
                   case "action":
                     return (
@@ -601,8 +615,6 @@ const Header = () => {
                               fontSize: 14,
                               fontWeight: 600,
                             }}
-                            fontWeight={600}
-                            fontSize={12}
                             color={
                               item.color === "error" ? "#ef4444" : "#0f172a"
                             }
