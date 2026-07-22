@@ -405,7 +405,7 @@ const Header = () => {
               <Box
                 sx={{ display: "flex", alignItems: "center", fontSize: "14px" }}
               >
-                {access.roles?.includes("1") ? "👑" : "👨‍💻"}
+                {access.roles?.includes("ADMIN") ? "👑" : "👨‍💻"}
               </Box>
 
               {/* User details stacked vertically for tight horizontal space */}
@@ -432,7 +432,7 @@ const Header = () => {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {access.user.subtitle}
+                    {access?.user?.subtitle}
                   </Typography>
                 )}
               </Box>
